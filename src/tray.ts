@@ -20,8 +20,8 @@ function isAlreadyBeautified(filePath: string): boolean {
   return basename(filePath).includes("_beautified");
 }
 
-// Simple camera icon as base64 PNG (16x16)
-const ICON_BASE64 = `iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAADRSURBVDiNpdMxSgNBGAXg7yaFWNhYWXgDj+ABPIClpY2F4AW8gIWVhYfwAB7AQrCwsLDYNRZZwnZnJ/FV/8ww7/3zD0P8VxZlw0WeHOMBjzjHNR5xgzMc4gon+Cj7XnC7hKnUk6g3eMZpOfsJL/GOR0xwjndM8YYtPCVcYR+neMAGFlJ3GGCxGqLUTQxwgW28JlxhF/N4rvQzxvgswQSbWMU8hqk7mOA7/tRd1HELu5jFXaV/KfV9/E1D/FTqBna6CfewjnvsYpBqgjq2sI1l/ANfJj0VB3rKpwAAAABJRU5ErkJggg==`;
+// White camera icon for macOS menu bar (22x22)
+const ICON_BASE64 = `iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAACXBIWXMAAAsTAAALEwEAmpwYAAAA6UlEQVR4nO2TywmDQBCG7UkF7SAhJ7UD12JUxEcP7lW0hpAifJySnLQG/YMDOYQVkTWEQPLBD8ssfMwMu4ryZw0AF7xyVt4BFvg+MYATgDvkuQE4Lolv2M910/hPmqZBnufgnKOua6yxSTxNE9I0ha7rUFWVomkafN+nO2lxURQki6IIwzBQwjCkWlmW8mLLsuB5njAFYwy2bcuLDcNAkiRCPY5jmKa5r2PGmNCx67pwHEdezDmnfc577fueEgQB1aqqkheP4yi8ivmcZdmidLP4Sdu21P2cruuwxkd/3nGn/ArgIIiVn+cBsJOTNPMb6GYAAAAASUVORK5CYII=`;
 
 interface TrayConfig {
   sourcePath: string;
