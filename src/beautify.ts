@@ -1,15 +1,11 @@
 import sharp from "sharp";
 import { createBackground } from "./background.js";
 import { createFrame, getTitleBarHeight } from "./frame.js";
-import { createShadow } from "./shadow.js";
 
 export interface BeautifyOptions {
   padding?: number;
   cornerRadius?: number;
   titleBarHeight?: number;
-  shadowBlur?: number;
-  shadowOffsetX?: number;
-  shadowOffsetY?: number;
   backgroundImage?: string;
   backgroundPreset?: string;
   gradientStart?: string;
@@ -23,11 +19,8 @@ export async function beautify(
 ): Promise<void> {
   const {
     padding = 80,
-    cornerRadius = 10,
-    titleBarHeight = 32,
-    shadowBlur = 30,
-    shadowOffsetX = 0,
-    shadowOffsetY = 20,
+    cornerRadius = 12,
+    titleBarHeight = 40,
     backgroundImage,
     backgroundPreset,
     gradientStart = "#2d3436",
@@ -48,13 +41,8 @@ export async function beautify(
   // Calculate dimensions
   const framedWidth = imgWidth;
   const framedHeight = imgHeight + titleBarHeight;
-  const totalWidth = framedWidth + padding * 2;
-  const totalHeight = framedHeight + padding * 2;
-
-  // Extra space for shadow blur and offset
-  const shadowPadding = shadowBlur * 2 + Math.abs(shadowOffsetY);
-  const canvasWidth = totalWidth + shadowPadding;
-  const canvasHeight = totalHeight + shadowPadding;
+  const canvasWidth = framedWidth + padding * 2;
+  const canvasHeight = framedHeight + padding * 2;
 
   // Create background
   const background = await createBackground({
@@ -74,19 +62,9 @@ export async function beautify(
     cornerRadius,
   });
 
-  // Create shadow
-  const shadow = await createShadow({
-    width: framedWidth,
-    height: framedHeight,
-    blur: shadowBlur,
-    cornerRadius,
-  });
-
-  // Position calculations (centered with shadow padding offset)
-  const frameX = padding + shadowPadding / 2;
-  const frameY = padding + shadowPadding / 2;
-  const shadowX = frameX + shadowOffsetX - shadowBlur / 2;
-  const shadowY = frameY + shadowOffsetY - shadowBlur / 2;
+  // Position calculations (centered)
+  const frameX = padding;
+  const frameY = padding;
   const screenshotX = frameX;
   const screenshotY = frameY + titleBarHeight;
 
@@ -123,12 +101,6 @@ export async function beautify(
   // Compose everything together
   await sharp(background)
     .composite([
-      // Shadow layer
-      {
-        input: shadow,
-        left: Math.round(shadowX),
-        top: Math.round(shadowY),
-      },
       // Window frame
       {
         input: frame,
