@@ -141,16 +141,51 @@ program
   .option("--background <path>", "Background image path")
   .option("--preset <name>", "Background preset (run 'presets' to see options)")
   .option("--delete-original", "Delete original file after beautifying", false)
+  .option("--foreground", "Run in foreground (don't detach)", false)
+  .option("--_daemon", "Internal: running as daemon", false)
   .action(async (source: string, output: string, opts: {
     padding: string;
     background?: string;
     preset?: string;
     deleteOriginal: boolean;
+    foreground: boolean;
+    _daemon: boolean;
   }) => {
     const padding = parseInt(opts.padding, 10);
     const backgroundImage = opts.background ? resolve(opts.background) : undefined;
     const backgroundPreset = opts.preset;
 
+    // If not running as daemon and not in foreground mode, spawn background process
+    if (!opts._daemon && !opts.foreground) {
+      const { spawn } = await import("child_process");
+      const args = [
+        process.argv[1],
+        "tray",
+        source,
+        output,
+        "--padding", opts.padding,
+        "--_daemon"
+      ];
+      if (backgroundImage) args.push("--background", backgroundImage);
+      if (backgroundPreset) args.push("--preset", backgroundPreset);
+      if (opts.deleteOriginal) args.push("--delete-original");
+
+      const child = spawn(process.execPath, args, {
+        detached: true,
+        stdio: "ignore",
+        env: process.env
+      });
+      child.unref();
+
+      console.log("📷 Screenshot Beautify started in system tray");
+      console.log(`   Watching: ${resolve(source)}`);
+      console.log(`   Output: ${resolve(output)}`);
+      console.log("\nThe app is now running in the background.");
+      console.log("Click the tray icon to control it, or use 'Quit' to stop.");
+      process.exit(0);
+    }
+
+    // Running as daemon or in foreground mode
     await startTray({
       sourcePath: source,
       outputPath: output,

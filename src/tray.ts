@@ -39,10 +39,6 @@ let systray: any = null;
 let trayReady = false;
 let config: TrayConfig;
 
-function timestamp(): string {
-  return new Date().toLocaleTimeString();
-}
-
 async function processFile(filePath: string): Promise<void> {
   if (!isImageFile(filePath) || isAlreadyBeautified(filePath)) {
     return;
@@ -52,29 +48,25 @@ async function processFile(filePath: string): Promise<void> {
   const beautifiedPath = join(config.outputPath, `${fileName}_beautified.png`);
 
   try {
-    console.log(`[${timestamp()}] 📸 New screenshot detected: ${basename(filePath)}`);
     await beautify(filePath, beautifiedPath, {
       padding: config.padding || 80,
       backgroundImage: config.backgroundImage,
       backgroundPreset: config.backgroundPreset,
     });
-    console.log(`[${timestamp()}] ✨ Beautified: ${basename(beautifiedPath)}`);
     processedCount++;
     updateMenu();
 
     if (config.deleteOriginal) {
       const { unlink } = await import("fs/promises");
       await unlink(filePath);
-      console.log(`[${timestamp()}] 🗑️  Deleted original: ${basename(filePath)}`);
     }
-  } catch (err) {
-    console.error(`[${timestamp()}] ❌ Failed to beautify ${basename(filePath)}:`, err instanceof Error ? err.message : err);
+  } catch {
+    // Silently fail in daemon mode
   }
 }
 
 function startWatching(): void {
   if (watcher) {
-    console.log("Already watching");
     return;
   }
 
@@ -89,14 +81,13 @@ function startWatching(): void {
   });
 
   watcher.on("ready", () => {
-    console.log(`[${timestamp()}] 👀 Watching: ${config.sourcePath}`);
     updateMenu();
   });
 
   watcher.on("add", processFile);
 
-  watcher.on("error", (error) => {
-    console.error(`[${timestamp()}] ❌ Watcher error:`, error);
+  watcher.on("error", () => {
+    // Silently handle errors in daemon mode
   });
 }
 
@@ -104,7 +95,6 @@ function stopWatching(): void {
   if (watcher) {
     watcher.close();
     watcher = null;
-    console.log(`[${timestamp()}] 🛑 Stopped watching`);
     updateMenu();
   }
 }
@@ -201,10 +191,6 @@ async function createTray(): Promise<void> {
     }
   });
 
-  console.log("📷 Screenshot Beautify running in system tray");
-  console.log(`   Source: ${config.sourcePath}`);
-  console.log(`   Output: ${config.outputPath}`);
-
   // Auto-start watching after tray is ready
   startWatching();
 }
@@ -226,7 +212,6 @@ export async function startTray(options: TrayConfig): Promise<void> {
 
   if (!existsSync(config.outputPath)) {
     mkdirSync(config.outputPath, { recursive: true });
-    console.log(`Created output directory: ${config.outputPath}`);
   }
 
   await createTray();
