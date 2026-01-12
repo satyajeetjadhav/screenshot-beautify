@@ -52,6 +52,7 @@ export async function beautify(
     preset: backgroundPreset,
     gradientStart,
     gradientEnd,
+    sourceImagePath: backgroundPreset === "auto" ? inputPath : undefined,
   });
 
   // Create the window frame
@@ -67,6 +68,40 @@ export async function beautify(
   const frameY = padding;
   const screenshotX = frameX;
   const screenshotY = frameY + titleBarHeight;
+
+  // Create shadow for auto preset (helps distinguish from similar background)
+  let shadow: Buffer | null = null;
+  if (backgroundPreset === "auto") {
+    const shadowBlur = 30;
+    const shadowOffsetX = 0;
+    const shadowOffsetY = 8;
+    const shadowOpacity = 0.4;
+
+    // Shadow needs extra space for blur
+    const shadowWidth = framedWidth + shadowBlur * 2;
+    const shadowHeight = framedHeight + shadowBlur * 2;
+
+    const shadowSvg = `
+      <svg width="${shadowWidth}" height="${shadowHeight}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="${shadowBlur / 2}" />
+          </filter>
+        </defs>
+        <rect
+          x="${shadowBlur}"
+          y="${shadowBlur}"
+          width="${framedWidth}"
+          height="${framedHeight}"
+          rx="${cornerRadius}"
+          ry="${cornerRadius}"
+          fill="rgba(0, 0, 0, ${shadowOpacity})"
+          filter="url(#shadow)"
+        />
+      </svg>
+    `;
+    shadow = await sharp(Buffer.from(shadowSvg)).png().toBuffer();
+  }
 
   // Create a mask for rounded bottom corners on the screenshot
   const cornerMask = Buffer.from(`
@@ -98,22 +133,37 @@ export async function beautify(
     .png()
     .toBuffer();
 
+  // Build composite layers
+  const layers: sharp.OverlayOptions[] = [];
+
+  // Add shadow first (behind everything) for auto preset
+  if (shadow) {
+    const shadowBlur = 30;
+    const shadowOffsetY = 8;
+    layers.push({
+      input: shadow,
+      left: Math.round(frameX - shadowBlur),
+      top: Math.round(frameY - shadowBlur + shadowOffsetY),
+    });
+  }
+
+  // Window frame
+  layers.push({
+    input: frame,
+    left: Math.round(frameX),
+    top: Math.round(frameY),
+  });
+
+  // Screenshot
+  layers.push({
+    input: roundedScreenshot,
+    left: Math.round(screenshotX),
+    top: Math.round(screenshotY),
+  });
+
   // Compose everything together
   await sharp(background)
-    .composite([
-      // Window frame
-      {
-        input: frame,
-        left: Math.round(frameX),
-        top: Math.round(frameY),
-      },
-      // Screenshot
-      {
-        input: roundedScreenshot,
-        left: Math.round(screenshotX),
-        top: Math.round(screenshotY),
-      },
-    ])
+    .composite(layers)
     .png()
     .toFile(outputPath);
 }

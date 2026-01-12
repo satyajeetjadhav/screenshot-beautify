@@ -32,7 +32,8 @@ program
   .description("List available background presets")
   .action(() => {
     console.log("Available background presets:\n");
-    const presets = listPresets();
+    console.log("  - auto (analyzes image and creates matching gradient)");
+    const presets = listPresets().filter(p => p !== "auto");
     presets.forEach((name) => {
       console.log(`  - ${name}`);
     });
