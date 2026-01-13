@@ -205,11 +205,13 @@ program
   .option("--padding <number>", "Padding around the screenshot", "80")
   .option("--background <path>", "Background image path")
   .option("--preset <name>", "Background preset (run 'presets' to see options)")
+  .option("--delete-original", "Delete original file after beautifying", false)
   .action(async (input: string, opts: {
     output?: string;
     padding: string;
     background?: string;
     preset?: string;
+    deleteOriginal: boolean;
   }) => {
     try {
       const inputPath = resolve(input);
@@ -229,6 +231,12 @@ program
       await beautify(inputPath, outputPath, { padding, backgroundImage, backgroundPreset });
 
       console.log(`Saved to: ${outputPath}`);
+
+      if (opts.deleteOriginal) {
+        const { unlink } = await import("fs/promises");
+        await unlink(inputPath);
+        console.log(`🗑️  Deleted original: ${basename(inputPath)}`);
+      }
     } catch (error) {
       console.error("Error:", error instanceof Error ? error.message : error);
       process.exit(1);

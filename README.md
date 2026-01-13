@@ -64,17 +64,29 @@ screenshot-beautify presets
 
 | Category | Presets |
 |----------|---------|
+| **Smart** | `auto` - analyzes your screenshot and creates a matching gradient |
 | Warm | `sunset`, `sunrise`, `peach` |
 | Cool | `ocean`, `sky`, `northern` |
 | Dark | `charcoal`, `midnight`, `space` |
 | Vibrant | `neon`, `fire`, `aurora` |
 | Soft | `lavender`, `mint`, `rose` |
 
+### Auto Preset
+
+The `auto` preset extracts the dominant colors from your screenshot and generates a complementary gradient background. This ensures your beautified screenshot always looks cohesive without manual color selection.
+
+```bash
+screenshot-beautify screenshot.png --preset auto
+```
+
 ## Examples
 
 ```bash
 # Basic usage
 screenshot-beautify screenshot.png
+
+# Auto-match background to screenshot colors
+screenshot-beautify screenshot.png --preset auto
 
 # With sunset gradient
 screenshot-beautify screenshot.png --preset sunset
