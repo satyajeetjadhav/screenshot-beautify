@@ -27,6 +27,14 @@
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satyajeetjadhav/screenshot-beautify.git"
+  },
+  "homepage": "https://github.com/satyajeetjadhav/screenshot-beautify#readme",
+  "bugs": {
+    "url": "https://github.com/satyajeetjadhav/screenshot-beautify/issues"
+  },
   "dependencies": {
     "chokidar": "^5.0.0",
     "commander": "^12.1.0",
