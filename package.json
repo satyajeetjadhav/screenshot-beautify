@@ -1,6 +1,6 @@
 {
   "name": "screenshot-beautify",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "description": "CLI tool to beautify screenshots with macOS-style window frames and gradient backgrounds",
   "type": "module",
   "main": "dist/index.js",
@@ -23,7 +23,8 @@
     "image",
     "frame",
     "macos",
-    "gradient"
+    "gradient",
+    "clipboard"
   ],
   "author": "",
   "license": "MIT",

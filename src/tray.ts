@@ -8,6 +8,16 @@ import { resolve, basename, extname, join } from "path";
 import { existsSync, mkdirSync } from "fs";
 import { beautify } from "./beautify.js";
 import { exec } from "child_process";
+import { promisify } from "util";
+
+const execAsync = promisify(exec);
+
+async function copyImageToClipboard(imagePath: string): Promise<void> {
+  if (process.platform !== "darwin") return;
+  const absolutePath = resolve(imagePath);
+  const script = `osascript -e 'set the clipboard to (read (POSIX file "${absolutePath}") as «class PNGf»)'`;
+  await execAsync(script);
+}
 
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
 
@@ -30,6 +40,7 @@ interface TrayConfig {
   backgroundImage?: string;
   backgroundPreset?: string;
   deleteOriginal?: boolean;
+  copyToClipboard?: boolean;
 }
 
 let watcher: FSWatcher | null = null;
@@ -56,6 +67,10 @@ async function processFile(filePath: string): Promise<void> {
     processedCount++;
     updateMenu();
 
+    if (config.copyToClipboard) {
+      await copyImageToClipboard(beautifiedPath);
+    }
+
     if (config.deleteOriginal) {
       const { unlink } = await import("fs/promises");
       await unlink(filePath);
@@ -75,8 +90,8 @@ function startWatching(): void {
     persistent: true,
     ignoreInitial: true,
     awaitWriteFinish: {
-      stabilityThreshold: 500,
-      pollInterval: 100
+      stabilityThreshold: 200,
+      pollInterval: 50
     }
   });
 
@@ -202,7 +217,8 @@ export async function startTray(options: TrayConfig): Promise<void> {
     padding: options.padding || 80,
     backgroundImage: options.backgroundImage,
     backgroundPreset: options.backgroundPreset,
-    deleteOriginal: options.deleteOriginal || false
+    deleteOriginal: options.deleteOriginal || false,
+    copyToClipboard: options.copyToClipboard || false
   };
 
   if (!existsSync(config.sourcePath)) {

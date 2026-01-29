@@ -7,6 +7,22 @@ import { listPresets } from "./presets.js";
 import { resolve, basename, dirname, extname, join } from "path";
 import chokidar from "chokidar";
 import { existsSync, mkdirSync } from "fs";
+import { exec } from "child_process";
+import { promisify } from "util";
+
+const execAsync = promisify(exec);
+
+async function copyToClipboard(imagePath: string): Promise<void> {
+  if (process.platform !== "darwin") {
+    console.warn("Clipboard copy is only supported on macOS");
+    return;
+  }
+
+  const absolutePath = resolve(imagePath);
+  // Use osascript to copy image to clipboard on macOS
+  const script = `osascript -e 'set the clipboard to (read (POSIX file "${absolutePath}") as «class PNGf»)'`;
+  await execAsync(script);
+}
 
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
 
@@ -48,11 +64,13 @@ program
   .option("--background <path>", "Background image path")
   .option("--preset <name>", "Background preset (run 'presets' to see options)")
   .option("--delete-original", "Delete original file after beautifying", false)
+  .option("--copy", "Copy beautified image to clipboard", false)
   .action(async (source: string, output: string, opts: {
     padding: string;
     background?: string;
     preset?: string;
     deleteOriginal: boolean;
+    copy: boolean;
   }) => {
     try {
       const sourcePath = resolve(source);
@@ -73,7 +91,7 @@ program
 
       console.log(`\n🔍 Watching for screenshots in: ${sourcePath}`);
       console.log(`📁 Beautified screenshots will be saved to: ${outputPath}`);
-      console.log(`⚙️  Options: padding=${padding}${backgroundPreset ? `, preset=${backgroundPreset}` : ''}${backgroundImage ? `, background=${backgroundImage}` : ''}${opts.deleteOriginal ? ', delete-original=true' : ''}`);
+      console.log(`⚙️  Options: padding=${padding}${backgroundPreset ? `, preset=${backgroundPreset}` : ''}${backgroundImage ? `, background=${backgroundImage}` : ''}${opts.deleteOriginal ? ', delete-original=true' : ''}${opts.copy ? ', copy-to-clipboard=true' : ''}`);
       console.log(`\n✅ File watcher is now running...`);
       console.log(`   Press Ctrl+C to stop\n`);
 
@@ -82,8 +100,8 @@ program
         persistent: true,
         ignoreInitial: true,
         awaitWriteFinish: {
-          stabilityThreshold: 500,
-          pollInterval: 100
+          stabilityThreshold: 200,
+          pollInterval: 50
         }
       });
 
@@ -101,6 +119,11 @@ program
           console.log(`[${timestamp()}] 📸 New screenshot detected: ${basename(filePath)}`);
           await beautify(filePath, beautifiedPath, { padding, backgroundImage, backgroundPreset });
           console.log(`[${timestamp()}] ✨ Beautified: ${basename(beautifiedPath)}`);
+
+          if (opts.copy) {
+            await copyToClipboard(beautifiedPath);
+            console.log(`[${timestamp()}] 📋 Copied to clipboard`);
+          }
 
           if (opts.deleteOriginal) {
             const { unlink } = await import("fs/promises");
@@ -142,6 +165,7 @@ program
   .option("--background <path>", "Background image path")
   .option("--preset <name>", "Background preset (run 'presets' to see options)")
   .option("--delete-original", "Delete original file after beautifying", false)
+  .option("--copy", "Copy beautified image to clipboard", false)
   .option("--foreground", "Run in foreground (don't detach)", false)
   .option("--_daemon", "Internal: running as daemon", false)
   .action(async (source: string, output: string, opts: {
@@ -149,6 +173,7 @@ program
     background?: string;
     preset?: string;
     deleteOriginal: boolean;
+    copy: boolean;
     foreground: boolean;
     _daemon: boolean;
   }) => {
@@ -170,6 +195,7 @@ program
       if (backgroundImage) args.push("--background", backgroundImage);
       if (backgroundPreset) args.push("--preset", backgroundPreset);
       if (opts.deleteOriginal) args.push("--delete-original");
+      if (opts.copy) args.push("--copy");
 
       const child = spawn(process.execPath, args, {
         detached: true,
@@ -193,7 +219,8 @@ program
       padding,
       backgroundImage,
       backgroundPreset,
-      deleteOriginal: opts.deleteOriginal
+      deleteOriginal: opts.deleteOriginal,
+      copyToClipboard: opts.copy
     });
   });
 
@@ -206,12 +233,14 @@ program
   .option("--background <path>", "Background image path")
   .option("--preset <name>", "Background preset (run 'presets' to see options)")
   .option("--delete-original", "Delete original file after beautifying", false)
+  .option("--copy", "Copy beautified image to clipboard", false)
   .action(async (input: string, opts: {
     output?: string;
     padding: string;
     background?: string;
     preset?: string;
     deleteOriginal: boolean;
+    copy: boolean;
   }) => {
     try {
       const inputPath = resolve(input);
@@ -231,6 +260,11 @@ program
       await beautify(inputPath, outputPath, { padding, backgroundImage, backgroundPreset });
 
       console.log(`Saved to: ${outputPath}`);
+
+      if (opts.copy) {
+        await copyToClipboard(outputPath);
+        console.log(`📋 Copied to clipboard`);
+      }
 
       if (opts.deleteOriginal) {
         const { unlink } = await import("fs/promises");
